@@ -1,0 +1,648 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Screening Console academic prototype API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: screenings
+    description: Synthetic document screening operations
+  - name: analytics
+    description: Demo analytics and dashboard summaries
+  - name: configuration
+    description: Prototype rules and mock verification records
+  - name: demo
+    description: Synthetic demo case loading
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [analytics]
+      summary: Get dashboard summary
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+  /screenings:
+    get:
+      operationId: listScreenings
+      tags: [screenings]
+      summary: List screening records
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: risk
+          in: query
+          schema:
+            $ref: "#/components/schemas/RiskLevel"
+        - name: documentType
+          in: query
+          schema:
+            $ref: "#/components/schemas/DocumentType"
+        - name: limit
+          in: query
+          schema:
+            type: number
+            minimum: 1
+            maximum: 100
+            default: 25
+      responses:
+        "200":
+          description: Screening history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Screening"
+    post:
+      operationId: createScreening
+      tags: [screenings]
+      summary: Create and process a synthetic screening
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScreeningInput"
+      responses:
+        "201":
+          description: Processed screening result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScreeningDetail"
+        "400":
+          description: Invalid screening input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /screenings/{id}:
+    get:
+      operationId: getScreening
+      tags: [screenings]
+      summary: Get a screening detail report
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Screening detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScreeningDetail"
+        "404":
+          description: Screening not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /analytics:
+    get:
+      operationId: getAnalytics
+      tags: [analytics]
+      summary: Get screening analytics
+      parameters:
+        - name: range
+          in: query
+          schema:
+            type: string
+            enum: [today, 7d, 30d, custom]
+            default: 7d
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Analytics data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Analytics"
+  /rules:
+    get:
+      operationId: getRules
+      tags: [configuration]
+      summary: Get prototype screening rules
+      responses:
+        "200":
+          description: Configured rules
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScreeningRules"
+    put:
+      operationId: updateRules
+      tags: [configuration]
+      summary: Update prototype screening rules
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScreeningRulesInput"
+      responses:
+        "200":
+          description: Updated rules
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScreeningRules"
+  /mock-records:
+    get:
+      operationId: listMockRecords
+      tags: [configuration]
+      summary: List synthetic verification records
+      responses:
+        "200":
+          description: Mock verification records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MockRecord"
+    post:
+      operationId: createMockRecord
+      tags: [configuration]
+      summary: Create a synthetic verification record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MockRecordInput"
+      responses:
+        "201":
+          description: Created mock record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MockRecord"
+  /mock-records/{id}:
+    patch:
+      operationId: updateMockRecord
+      tags: [configuration]
+      summary: Update a synthetic verification record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MockRecordInput"
+      responses:
+        "200":
+          description: Updated mock record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MockRecord"
+    delete:
+      operationId: deleteMockRecord
+      tags: [configuration]
+      summary: Delete a synthetic verification record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+  /demo/load:
+    post:
+      operationId: loadDemoCase
+      tags: [demo]
+      summary: Load a synthetic demo scenario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DemoCaseInput"
+      responses:
+        "201":
+          description: Loaded demo screening
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScreeningDetail"
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    DocumentType:
+      type: string
+      enum:
+        - Passport
+        - Visa
+        - National ID
+        - Driving License
+        - Permit
+        - Travel Authorization
+    RiskLevel:
+      type: string
+      enum: [LOW, MEDIUM, HIGH, CRITICAL]
+    ScreeningStatus:
+      type: string
+      enum: [CLEAR, REVIEW, ALERT]
+    ResultStatus:
+      type: string
+      enum: [PASS, WARNING, SUSPICIOUS, MATCH, MISMATCH, INSUFFICIENT QUALITY]
+    Recommendation:
+      type: string
+      enum:
+        - CLEAR FOR MANUAL REVIEW
+        - REQUEST ADDITIONAL VERIFICATION
+        - REFER TO AUTHORIZED OFFICER
+    ScreeningInput:
+      type: object
+      required: [documentType]
+      properties:
+        documentType:
+          $ref: "#/components/schemas/DocumentType"
+        documentNumber:
+          type: string
+        nationality:
+          type: string
+        fileName:
+          type: string
+        personImageProvided:
+          type: boolean
+          default: false
+        scenario:
+          type: string
+          enum: [valid, expired, tampered, mismatch, blacklisted]
+    DemoCaseInput:
+      type: object
+      required: [scenario]
+      properties:
+        scenario:
+          type: string
+          enum: [valid, expired, tampered, mismatch, blacklisted]
+    ExtractedField:
+      type: object
+      required: [label, value, confidence, source]
+      properties:
+        label:
+          type: string
+        value:
+          type: string
+        confidence:
+          type: number
+        source:
+          type: string
+          enum: [AI/OCR Extracted, DEMO FALLBACK]
+    ValidationCheck:
+      type: object
+      required: [label, status, detail]
+      properties:
+        label:
+          type: string
+        status:
+          $ref: "#/components/schemas/ResultStatus"
+        detail:
+          type: string
+    TamperingFinding:
+      type: object
+      required: [region, type, confidence, explanation, status]
+      properties:
+        region:
+          type: string
+        type:
+          type: string
+        confidence:
+          type: number
+        explanation:
+          type: string
+        status:
+          $ref: "#/components/schemas/ResultStatus"
+    FaceVerification:
+      type: object
+      required: [documentFaceDetected, personFaceDetected, similarity, result, note]
+      properties:
+        documentFaceDetected:
+          type: boolean
+        personFaceDetected:
+          type: boolean
+        similarity:
+          type: number
+        result:
+          $ref: "#/components/schemas/ResultStatus"
+        note:
+          type: string
+    RiskFactor:
+      type: object
+      required: [label, points, category]
+      properties:
+        label:
+          type: string
+        points:
+          type: number
+        category:
+          type: string
+          enum: [VALIDATION, TAMPERING, FACE, OCR]
+    Screening:
+      type: object
+      required:
+        - id
+        - screeningId
+        - createdAt
+        - documentType
+        - documentNumber
+        - nationality
+        - riskScore
+        - riskLevel
+        - status
+        - ocrStatus
+        - validationStatus
+        - tamperingStatus
+        - faceVerification
+        - recommendation
+        - processingTimeMs
+      properties:
+        id:
+          type: number
+        screeningId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        documentType:
+          $ref: "#/components/schemas/DocumentType"
+        documentNumber:
+          type: string
+        nationality:
+          type: string
+        riskScore:
+          type: number
+        riskLevel:
+          $ref: "#/components/schemas/RiskLevel"
+        status:
+          $ref: "#/components/schemas/ScreeningStatus"
+        ocrStatus:
+          $ref: "#/components/schemas/ResultStatus"
+        validationStatus:
+          $ref: "#/components/schemas/ResultStatus"
+        tamperingStatus:
+          $ref: "#/components/schemas/ResultStatus"
+        faceVerification:
+          $ref: "#/components/schemas/ResultStatus"
+        recommendation:
+          $ref: "#/components/schemas/Recommendation"
+        processingTimeMs:
+          type: number
+    ScreeningDetail:
+      allOf:
+        - $ref: "#/components/schemas/Screening"
+        - type: object
+          required:
+            - extractedFields
+            - ocrConfidence
+            - validationChecks
+            - tamperingFindings
+            - metadata
+            - face
+            - riskFactors
+            - prototypeDisclaimer
+            - fileName
+          properties:
+            fileName:
+              type: string
+            extractedFields:
+              type: array
+              items:
+                $ref: "#/components/schemas/ExtractedField"
+            ocrConfidence:
+              type: number
+            validationChecks:
+              type: array
+              items:
+                $ref: "#/components/schemas/ValidationCheck"
+            tamperingFindings:
+              type: array
+              items:
+                $ref: "#/components/schemas/TamperingFinding"
+            metadata:
+              type: object
+              additionalProperties:
+                type: string
+            face:
+              $ref: "#/components/schemas/FaceVerification"
+            riskFactors:
+              type: array
+              items:
+                $ref: "#/components/schemas/RiskFactor"
+            prototypeDisclaimer:
+              type: string
+    DashboardSummary:
+      type: object
+      required:
+        - documentsScreenedToday
+        - verifiedDocuments
+        - suspiciousDocuments
+        - highRiskDocuments
+        - averageProcessingTimeMs
+        - riskDistribution
+        - documentTypeDistribution
+        - dailyTrend
+        - recentScreenings
+      properties:
+        documentsScreenedToday:
+          type: number
+        verifiedDocuments:
+          type: number
+        suspiciousDocuments:
+          type: number
+        highRiskDocuments:
+          type: number
+        averageProcessingTimeMs:
+          type: number
+        riskDistribution:
+          type: array
+          items:
+            $ref: "#/components/schemas/CountPoint"
+        documentTypeDistribution:
+          type: array
+          items:
+            $ref: "#/components/schemas/CountPoint"
+        dailyTrend:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrendPoint"
+        recentScreenings:
+          type: array
+          items:
+            $ref: "#/components/schemas/Screening"
+    CountPoint:
+      type: object
+      required: [label, value]
+      properties:
+        label:
+          type: string
+        value:
+          type: number
+    TrendPoint:
+      type: object
+      required: [label, screened, suspicious]
+      properties:
+        label:
+          type: string
+        screened:
+          type: number
+        suspicious:
+          type: number
+    Analytics:
+      type: object
+      required:
+        - range
+        - totalScreened
+        - validPercentage
+        - suspiciousPercentage
+        - averageProcessingTimeMs
+        - tamperingFindings
+        - faceMismatches
+        - riskDistribution
+        - dailyTrend
+      properties:
+        range:
+          type: string
+        totalScreened:
+          type: number
+        validPercentage:
+          type: number
+        suspiciousPercentage:
+          type: number
+        averageProcessingTimeMs:
+          type: number
+        tamperingFindings:
+          type: number
+        faceMismatches:
+          type: number
+        riskDistribution:
+          type: array
+          items:
+            $ref: "#/components/schemas/CountPoint"
+        dailyTrend:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrendPoint"
+    ScreeningRules:
+      type: object
+      required: [passportNumberFormat, minValidityDays, maxValidityYears, riskThresholds, requiredFields]
+      properties:
+        passportNumberFormat:
+          type: string
+        minValidityDays:
+          type: number
+        maxValidityYears:
+          type: number
+        visaValidityDays:
+          type: number
+        riskThresholds:
+          type: object
+          required: [lowMax, mediumMax, highMax]
+          properties:
+            lowMax:
+              type: number
+            mediumMax:
+              type: number
+            highMax:
+              type: number
+        requiredFields:
+          type: array
+          items:
+            type: string
+    ScreeningRulesInput:
+      allOf:
+        - $ref: "#/components/schemas/ScreeningRules"
+    MockRecord:
+      type: object
+      required: [id, documentNumber, name, nationality, status, expiry, notes]
+      properties:
+        id:
+          type: number
+        documentNumber:
+          type: string
+        name:
+          type: string
+        nationality:
+          type: string
+        status:
+          type: string
+          enum: [VALID, EXPIRED, BLACKLISTED, SUSPENDED, NOT_FOUND]
+        expiry:
+          type: string
+        notes:
+          type: string
+    MockRecordInput:
+      type: object
+      required: [documentNumber, name, nationality, status, expiry, notes]
+      properties:
+        documentNumber:
+          type: string
+        name:
+          type: string
+        nationality:
+          type: string
+        status:
+          type: string
+          enum: [VALID, EXPIRED, BLACKLISTED, SUSPENDED, NOT_FOUND]
+        expiry:
+          type: string
+        notes:
+          type: string
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
