@@ -88,7 +88,7 @@ async function loadMockRecords(): Promise<MockRecordLookup[]> {
   }));
 }
 
-function resolveDateRange(range?: string, from?: string, to?: string): { from?: Date; to?: Date } {
+function resolveDateRange(range?: string, from?: Date, to?: Date): { from?: Date; to?: Date } {
   const now = new Date();
   if (range === "today") {
     const start = new Date(now); start.setHours(0, 0, 0, 0);
@@ -103,7 +103,8 @@ function resolveDateRange(range?: string, from?: string, to?: string): { from?: 
     return { from: start, to: now };
   }
   if (range === "custom" && from && to) {
-    return { from: new Date(from), to: new Date(to + "T23:59:59.999Z") };
+    const end = new Date(to); end.setHours(23, 59, 59, 999);
+    return { from: new Date(from), to: end };
   }
   const start = new Date(now); start.setDate(start.getDate() - 6); start.setHours(0, 0, 0, 0);
   return { from: start, to: now };
@@ -263,7 +264,7 @@ router.get("/analytics", async (req, res): Promise<void> => {
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
   const { range, from, to } = parsed.data;
-  const { from: dateFrom, to: dateTo } = resolveDateRange(range as string, from as string, to as string);
+  const { from: dateFrom, to: dateTo } = resolveDateRange(range, from, to);
 
   let rows = await db.select().from(screeningsTable).orderBy(asc("createdAt"))._exec();
   if (dateFrom) rows = rows.filter(r => new Date(r.createdAt as string) >= dateFrom!);
