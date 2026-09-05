@@ -6,7 +6,9 @@
 import fs from "fs";
 import path from "path";
 
-const DATA_FILE = path.resolve(process.cwd(), "screening-data.json");
+const DATA_FILE = process.env.VERCEL
+  ? path.join("/tmp", "screening-data.json")
+  : path.resolve(process.cwd(), "screening-data.json");
 
 interface Store {
   screenings: Record<string, unknown>[];
@@ -30,7 +32,11 @@ function load(): Store {
 }
 
 function save(store: Store) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(store, null, 2), "utf8");
+  try {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(store, null, 2), "utf8");
+  } catch {
+    // Read-only filesystem (e.g. Vercel serverless) — keep the in-memory store.
+  }
 }
 
 let _store: Store = load();
